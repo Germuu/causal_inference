@@ -72,7 +72,7 @@ def fit_direction_fast(X, Y, k, direction="X->Y")   -> tuple[tuple[float, float,
         theta_Y1_candidates: list[float] = neighbors(mle_theta_Y1, grid)
 
         best_ll: float = -np.inf
-        best_params = None
+        best_params: tuple[float, float, float] = (0.0, 0.0, 0.0)
 
         # Since parameters are independent, just check all combinations of closest neighbors (usually 2 each)
         for theta_X, theta_Y0, theta_Y1 in product(
@@ -81,7 +81,7 @@ def fit_direction_fast(X, Y, k, direction="X->Y")   -> tuple[tuple[float, float,
             ll: float = log_likelihood_fast(counts, theta_X, theta_Y0, theta_Y1)
             if ll > best_ll:
                 best_ll = ll
-                best_params = (theta_X, theta_Y0, theta_Y1)
+                best_params: tuple[float, float, float] = (theta_X, theta_Y0, theta_Y1)
 
 
         if best_params is None:
