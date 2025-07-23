@@ -7,8 +7,8 @@ from numpy.typing import NDArray
 def generate_data(
     n_samples: int, theta_X: float, theta_Y_given_X: dict
 ) -> tuple[np.ndarray, np.ndarray]:
-    X = np.random.binomial(1, theta_X, size=n_samples)
-    Y = np.array([np.random.binomial(1, theta_Y_given_X[x]) for x in X])
+    X: np.ndarray = np.random.binomial(1, theta_X, size=n_samples)
+    Y: np.ndarray = np.array([np.random.binomial(1, theta_Y_given_X[x]) for x in X])
     return X, Y
 
 
@@ -90,41 +90,44 @@ def fit_direction_fast(X, Y, k, direction="X->Y")   -> tuple[tuple[float, float,
 
 
     else:
-        # Flip X, Y and run same logic
         return fit_direction_fast(Y, X, k, direction="X->Y")
 
 
-def run_experiment(n_trials=100, sample_sizes=None, k_values=None):
+def run_experiment(n_trials=100, sample_sizes=None, k_values=None) -> tuple[dict[tuple[int, int], float], list[int], range]:
     if sample_sizes is None:
         sample_sizes = [50, 100, 500, 1000, 5000, 10000]
     if k_values is None:
         k_values = range(2, 10)
 
-    results = {}  # (k, n_samples) -> proportion X->Y wins
+    results: dict[tuple[int, int], float] = {}  # (k, n_samples) -> proportion X->Y wins
 
     for k in k_values:
-        grid = discretize_params(k)
+        grid: NDArray[np.float64] = discretize_params(k)
         print(f"Running for k={k}")
         for n_samples in sample_sizes:
             wins = 0
             for _ in range(n_trials):
                 # Sample true parameters uniformly from grid
-                theta_X = np.random.choice(grid)
-                theta_Y0 = np.random.choice(grid)
-                theta_Y1 = np.random.choice(grid)
-                # true_params = (theta_X, theta_Y0, theta_Y1)
+                theta_X: float = np.random.choice(grid)
+                theta_Y0: float = np.random.choice(grid)
+                theta_Y1: float = np.random.choice(grid)
+                theta_Y_given_X: dict[int, float] = {0: theta_Y0, 1: theta_Y1}
 
-                theta_Y_given_X = {0: theta_Y0, 1: theta_Y1}
+                X: np.ndarray
+                Y: np.ndarray
                 X, Y = generate_data(n_samples, theta_X, theta_Y_given_X)
 
                 # Fit both directions
+                ll_XY: float
+                ll_YX: float
+
                 _, ll_XY = fit_direction_fast(X, Y, k, "X->Y")
                 _, ll_YX = fit_direction_fast(X, Y, k, "Y->X")
 
                 if ll_XY > ll_YX:
                     wins += 1
 
-            proportion = wins / n_trials
+            proportion: float = wins / n_trials
             results[(k, n_samples)] = proportion
             print(f"  n={n_samples}: Prop correct (X->Y) = {proportion:.3f}")
 
@@ -135,7 +138,7 @@ def plot_results(results, sample_sizes, k_values):
     plt.figure(figsize=(12, 7))
 
     for k in k_values:
-        proportions = [results[(k, n)] for n in sample_sizes]
+        proportions: list[float] = [results[(k, n)] for n in sample_sizes]
         plt.plot(sample_sizes, proportions, marker="o", label=f"k={k}")
 
     plt.xscale("log")
