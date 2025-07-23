@@ -37,20 +37,28 @@ def log_likelihood_fast(
 
     return ll_X + ll_Y0 + ll_Y1
 
+def neighbors(val, grid:NDArray[np.float64]):
+    idx = np.searchsorted(grid, val)
+    candidates = []
+    if idx > 0:
+        candidates.append(grid[idx - 1])
+    if idx < len(grid):
+        candidates.append(grid[min(idx, len(grid) - 1)])
+    return list(set(candidates))  # unique
 
-def fit_direction_fast(X, Y, k, direction="X->Y"):
-    grid = discretize_params(k)
+def fit_direction_fast(X, Y, k, direction="X->Y")   -> tuple[tuple[float, float, float], float]:
+    grid: NDArray[np.float64] = discretize_params(k)
 
     if direction == "X->Y":
         X0 = X == 0
         X1 = X == 1
-        n_X1 = np.sum(X1)
-        n_X0 = len(X) - n_X1
-        n_Y1_X0 = np.sum(Y[X0])
-        n_Y0_X0 = n_X0 - n_Y1_X0
-        n_Y1_X1 = np.sum(Y[X1])
-        n_Y0_X1 = n_X1 - n_Y1_X1
-        counts = (n_X1, n_X0, n_Y1_X0, n_Y0_X0, n_Y1_X1, n_Y0_X1)
+        n_X1: int = np.sum(X1)
+        n_X0: int = len(X) - n_X1
+        n_Y1_X0: int = np.sum(Y[X0])
+        n_Y0_X0: int = n_X0 - n_Y1_X0
+        n_Y1_X1: int = np.sum(Y[X1])
+        n_Y0_X1: int = n_X1 - n_Y1_X1
+        counts: tuple[int, int, int, int, int, int] = (n_X1, n_X0, n_Y1_X0, n_Y0_X0, n_Y1_X1, n_Y0_X1)
 
         # Compute MLEs
         mle_theta_X = n_X1 / (n_X1 + n_X0) if (n_X1 + n_X0) > 0 else 0.0
@@ -58,18 +66,10 @@ def fit_direction_fast(X, Y, k, direction="X->Y"):
         mle_theta_Y1 = n_Y1_X1 / (n_Y1_X1 + n_Y0_X1) if (n_Y1_X1 + n_Y0_X1) > 0 else 0.0
 
         # Helper: find closest grid point(s) to mle, including neighbors if needed
-        def neighbors(val):
-            idx = np.searchsorted(grid, val)
-            candidates = []
-            if idx > 0:
-                candidates.append(grid[idx - 1])
-            if idx < len(grid):
-                candidates.append(grid[min(idx, len(grid) - 1)])
-            return list(set(candidates))  # unique
 
-        theta_X_candidates = neighbors(mle_theta_X)
-        theta_Y0_candidates = neighbors(mle_theta_Y0)
-        theta_Y1_candidates = neighbors(mle_theta_Y1)
+        theta_X_candidates = neighbors(mle_theta_X, grid)
+        theta_Y0_candidates = neighbors(mle_theta_Y0, grid)
+        theta_Y1_candidates = neighbors(mle_theta_Y1, grid)
 
         best_ll = -np.inf
         best_params = None
@@ -83,7 +83,11 @@ def fit_direction_fast(X, Y, k, direction="X->Y"):
                 best_ll = ll
                 best_params = (theta_X, theta_Y0, theta_Y1)
 
+
+        if best_params is None:
+            raise ValueError("No best parameters found. Check grid or input data.")
         return best_params, best_ll
+
 
     else:
         # Flip X, Y and run same logic
