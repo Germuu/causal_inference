@@ -18,9 +18,9 @@ def log_likelihood_fast(counts: tuple[int, int, int, int, int, int], theta_X: fl
 
     n_X1, n_X0, n_Y1_X0, n_Y0_X0, n_Y1_X1, n_Y0_X1 = counts
 
-    ll_X = n_X1 * np.log(theta_X + eps) + n_X0 * np.log(1 - theta_X + eps)
-    ll_Y0 = n_Y1_X0 * np.log(theta_Y0 + eps) + n_Y0_X0 * np.log(1 - theta_Y0 + eps)
-    ll_Y1 = n_Y1_X1 * np.log(theta_Y1 + eps) + n_Y0_X1 * np.log(1 - theta_Y1 + eps)
+    ll_X:float = n_X1 * np.log(theta_X + eps) + n_X0 * np.log(1 - theta_X + eps)
+    ll_Y0:float = n_Y1_X0 * np.log(theta_Y0 + eps) + n_Y0_X0 * np.log(1 - theta_Y0 + eps)
+    ll_Y1:float = n_Y1_X1 * np.log(theta_Y1 + eps) + n_Y0_X1 * np.log(1 - theta_Y1 + eps)
 
     return ll_X + ll_Y0 + ll_Y1
 
