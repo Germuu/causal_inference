@@ -37,9 +37,9 @@ def log_likelihood_fast(
 
     return ll_X + ll_Y0 + ll_Y1
 
-def neighbors(val, grid:NDArray[np.float64]):
-    idx = np.searchsorted(grid, val)
-    candidates = []
+def neighbors(val, grid:NDArray[np.float64]) -> list[float]:
+    idx: int = np.searchsorted(grid, val)
+    candidates: list[float] = []
     if idx > 0:
         candidates.append(grid[idx - 1])
     if idx < len(grid):
@@ -61,24 +61,24 @@ def fit_direction_fast(X, Y, k, direction="X->Y")   -> tuple[tuple[float, float,
         counts: tuple[int, int, int, int, int, int] = (n_X1, n_X0, n_Y1_X0, n_Y0_X0, n_Y1_X1, n_Y0_X1)
 
         # Compute MLEs
-        mle_theta_X = n_X1 / (n_X1 + n_X0) if (n_X1 + n_X0) > 0 else 0.0
-        mle_theta_Y0 = n_Y1_X0 / (n_Y1_X0 + n_Y0_X0) if (n_Y1_X0 + n_Y0_X0) > 0 else 0.0
-        mle_theta_Y1 = n_Y1_X1 / (n_Y1_X1 + n_Y0_X1) if (n_Y1_X1 + n_Y0_X1) > 0 else 0.0
+        mle_theta_X: float = n_X1 / (n_X1 + n_X0) if (n_X1 + n_X0) > 0 else 0.0
+        mle_theta_Y0: float = n_Y1_X0 / (n_Y1_X0 + n_Y0_X0) if (n_Y1_X0 + n_Y0_X0) > 0 else 0.0
+        mle_theta_Y1: float = n_Y1_X1 / (n_Y1_X1 + n_Y0_X1) if (n_Y1_X1 + n_Y0_X1) > 0 else 0.0
 
         # Helper: find closest grid point(s) to mle, including neighbors if needed
 
-        theta_X_candidates = neighbors(mle_theta_X, grid)
-        theta_Y0_candidates = neighbors(mle_theta_Y0, grid)
-        theta_Y1_candidates = neighbors(mle_theta_Y1, grid)
+        theta_X_candidates: list[float] = neighbors(mle_theta_X, grid)
+        theta_Y0_candidates: list[float] = neighbors(mle_theta_Y0, grid)
+        theta_Y1_candidates: list[float] = neighbors(mle_theta_Y1, grid)
 
-        best_ll = -np.inf
+        best_ll: float = -np.inf
         best_params = None
 
         # Since parameters are independent, just check all combinations of closest neighbors (usually 2 each)
         for theta_X, theta_Y0, theta_Y1 in product(
             theta_X_candidates, theta_Y0_candidates, theta_Y1_candidates
         ):
-            ll = log_likelihood_fast(counts, theta_X, theta_Y0, theta_Y1)
+            ll: float = log_likelihood_fast(counts, theta_X, theta_Y0, theta_Y1)
             if ll > best_ll:
                 best_ll = ll
                 best_params = (theta_X, theta_Y0, theta_Y1)
