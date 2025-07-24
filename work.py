@@ -7,14 +7,14 @@ from numpy.typing import NDArray
 def generate_data(
     n_samples: int, theta_X: float, theta_Y_given_X: dict
 ) -> tuple[np.ndarray, np.ndarray]:
-    X: np.ndarray = np.random.binomial(1, theta_X, size=n_samples)
-    Y: np.ndarray = np.array([np.random.binomial(1, theta_Y_given_X[x]) for x in X])
+    X: np.ndarray = np.random.binomial(n=1, p=theta_X, size=n_samples)
+    Y: np.ndarray = np.array(object=[np.random.binomial(n=1, p=theta_Y_given_X[x]) for x in X])
     return X, Y
 
 
 def discretize_params(k: int) -> NDArray[np.float64]:
     step: float = 2 ** (-k)
-    return np.arange(0, 1 + step, step, dtype=np.float64)
+    return np.arange(start=0, stop=1 + step, step=step, dtype=np.float64)
 
 
 def log_likelihood_fast(
@@ -25,7 +25,12 @@ def log_likelihood_fast(
 ) -> float:
     eps = 1e-12
 
-    n_X1, n_X0, n_Y1_X0, n_Y0_X0, n_Y1_X1, n_Y0_X1 = counts
+    n_X1: int = counts[0]
+    n_X0: int = counts[1]
+    n_Y1_X0: int = counts[2]
+    n_Y0_X0: int = counts[3]
+    n_Y1_X1: int = counts[4]
+    n_Y0_X1: int = counts[5]
 
     ll_X: float = n_X1 * np.log(theta_X + eps) + n_X0 * np.log(1 - theta_X + eps)
     ll_Y0: float = n_Y1_X0 * np.log(theta_Y0 + eps) + n_Y0_X0 * np.log(
@@ -67,9 +72,9 @@ def fit_direction_fast(X, Y, k, direction="X->Y")   -> tuple[tuple[float, float,
 
         # Helper: find closest grid point(s) to mle, including neighbors if needed
 
-        theta_X_candidates: list[float] = neighbors(mle_theta_X, grid)
-        theta_Y0_candidates: list[float] = neighbors(mle_theta_Y0, grid)
-        theta_Y1_candidates: list[float] = neighbors(mle_theta_Y1, grid)
+        theta_X_candidates: list[float] = neighbors(val=mle_theta_X, grid=grid)
+        theta_Y0_candidates: list[float] = neighbors(val=mle_theta_Y0, grid=grid)
+        theta_Y1_candidates: list[float] = neighbors(val=mle_theta_Y1, grid=grid)
 
         best_ll: float = -np.inf
         best_params: tuple[float, float, float] = (0.0, 0.0, 0.0)
@@ -78,7 +83,7 @@ def fit_direction_fast(X, Y, k, direction="X->Y")   -> tuple[tuple[float, float,
         for theta_X, theta_Y0, theta_Y1 in product(
             theta_X_candidates, theta_Y0_candidates, theta_Y1_candidates
         ):
-            ll: float = log_likelihood_fast(counts, theta_X, theta_Y0, theta_Y1)
+            ll: float = log_likelihood_fast(counts=counts, theta_X=theta_X, theta_Y0=theta_Y0, theta_Y1=theta_Y1)
             if ll > best_ll:
                 best_ll = ll
                 best_params: tuple[float, float, float] = (theta_X, theta_Y0, theta_Y1)
@@ -141,12 +146,12 @@ def plot_results(results, sample_sizes, k_values):
         proportions: list[float] = [results[(k, n)] for n in sample_sizes]
         plt.plot(sample_sizes, proportions, marker="o", label=f"k={k}")
 
-    plt.xscale("log")
-    plt.xlabel("Sample size (log scale)")
-    plt.ylabel("Proportion correct (X→Y wins)")
-    plt.title("Causal direction identification accuracy vs Sample size")
+    plt.xscale(value="log")
+    plt.xlabel(xlabel="Sample size (log scale)")
+    plt.ylabel(ylabel="Proportion correct (X→Y wins)")
+    plt.title(label="Causal direction identification accuracy vs Sample size")
     plt.legend(title="Discretization granularity k")
-    plt.grid(True)
+    plt.grid(visible=True)
     plt.tight_layout()
     plt.show()
 
