@@ -8,7 +8,9 @@ def generate_data(
     n_samples: int, theta_X: float, theta_Y_given_X: dict
 ) -> tuple[np.ndarray, np.ndarray]:
     X: np.ndarray = np.random.binomial(n=1, p=theta_X, size=n_samples)
-    Y: np.ndarray = np.array(object=[np.random.binomial(n=1, p=theta_Y_given_X[x]) for x in X])
+    Y: np.ndarray = np.array(
+        object=[np.random.binomial(n=1, p=theta_Y_given_X[x]) for x in X]
+    )
     return X, Y
 
 
@@ -42,7 +44,8 @@ def log_likelihood_fast(
 
     return ll_X + ll_Y0 + ll_Y1
 
-def neighbors(val, grid:NDArray[np.float64]) -> list[float]:
+
+def neighbors(val, grid: NDArray[np.float64]) -> list[float]:
     idx: int = np.searchsorted(grid, val)
     candidates: list[float] = []
     if idx > 0:
@@ -51,7 +54,10 @@ def neighbors(val, grid:NDArray[np.float64]) -> list[float]:
         candidates.append(grid[min(idx, len(grid) - 1)])
     return list(set(candidates))  # unique
 
-def fit_direction_fast(X, Y, k, direction="X->Y")   -> tuple[tuple[float, float, float], float]:
+
+def fit_direction_fast(
+    X, Y, k, direction="X->Y"
+) -> tuple[tuple[float, float, float], float]:
     grid: NDArray[np.float64] = discretize_params(k)
 
     if direction == "X->Y":
@@ -63,12 +69,23 @@ def fit_direction_fast(X, Y, k, direction="X->Y")   -> tuple[tuple[float, float,
         n_Y0_X0: int = n_X0 - n_Y1_X0
         n_Y1_X1: int = np.sum(Y[X1])
         n_Y0_X1: int = n_X1 - n_Y1_X1
-        counts: tuple[int, int, int, int, int, int] = (n_X1, n_X0, n_Y1_X0, n_Y0_X0, n_Y1_X1, n_Y0_X1)
+        counts: tuple[int, int, int, int, int, int] = (
+            n_X1,
+            n_X0,
+            n_Y1_X0,
+            n_Y0_X0,
+            n_Y1_X1,
+            n_Y0_X1,
+        )
 
         # Compute MLEs
         mle_theta_X: float = n_X1 / (n_X1 + n_X0) if (n_X1 + n_X0) > 0 else 0.0
-        mle_theta_Y0: float = n_Y1_X0 / (n_Y1_X0 + n_Y0_X0) if (n_Y1_X0 + n_Y0_X0) > 0 else 0.0
-        mle_theta_Y1: float = n_Y1_X1 / (n_Y1_X1 + n_Y0_X1) if (n_Y1_X1 + n_Y0_X1) > 0 else 0.0
+        mle_theta_Y0: float = (
+            n_Y1_X0 / (n_Y1_X0 + n_Y0_X0) if (n_Y1_X0 + n_Y0_X0) > 0 else 0.0
+        )
+        mle_theta_Y1: float = (
+            n_Y1_X1 / (n_Y1_X1 + n_Y0_X1) if (n_Y1_X1 + n_Y0_X1) > 0 else 0.0
+        )
 
         # Helper: find closest grid point(s) to mle, including neighbors if needed
 
@@ -83,22 +100,24 @@ def fit_direction_fast(X, Y, k, direction="X->Y")   -> tuple[tuple[float, float,
         for theta_X, theta_Y0, theta_Y1 in product(
             theta_X_candidates, theta_Y0_candidates, theta_Y1_candidates
         ):
-            ll: float = log_likelihood_fast(counts=counts, theta_X=theta_X, theta_Y0=theta_Y0, theta_Y1=theta_Y1)
+            ll: float = log_likelihood_fast(
+                counts=counts, theta_X=theta_X, theta_Y0=theta_Y0, theta_Y1=theta_Y1
+            )
             if ll > best_ll:
                 best_ll = ll
                 best_params: tuple[float, float, float] = (theta_X, theta_Y0, theta_Y1)
-
 
         if best_params is None:
             raise ValueError("No best parameters found. Check grid or input data.")
         return best_params, best_ll
 
-
     else:
         return fit_direction_fast(Y, X, k, direction="X->Y")
 
 
-def run_experiment(n_trials=100, sample_sizes=None, k_values=None) -> tuple[dict[tuple[int, int], float], list[int], range]:
+def run_experiment(
+    n_trials=100, sample_sizes=None, k_values=None
+) -> tuple[dict[tuple[int, int], float], list[int], range]:
     if sample_sizes is None:
         sample_sizes = [50, 100, 500, 1000, 5000, 10000]
     if k_values is None:
