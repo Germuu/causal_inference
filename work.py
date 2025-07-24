@@ -87,8 +87,6 @@ def fit_direction_fast(
             n_Y1_X1 / (n_Y1_X1 + n_Y0_X1) if (n_Y1_X1 + n_Y0_X1) > 0 else 0.0
         )
 
-        # Helper: find closest grid point(s) to mle, including neighbors if needed
-
         theta_X_candidates: list[float] = neighbors(val=mle_theta_X, grid=grid)
         theta_Y0_candidates: list[float] = neighbors(val=mle_theta_Y0, grid=grid)
         theta_Y1_candidates: list[float] = neighbors(val=mle_theta_Y1, grid=grid)
@@ -96,7 +94,6 @@ def fit_direction_fast(
         best_ll: float = -np.inf
         best_params: tuple[float, float, float] = (0.0, 0.0, 0.0)
 
-        # Since parameters are independent, just check all combinations of closest neighbors (usually 2 each)
         for theta_X, theta_Y0, theta_Y1 in product(
             theta_X_candidates, theta_Y0_candidates, theta_Y1_candidates
         ):
@@ -131,7 +128,6 @@ def run_experiment(
         for n_samples in sample_sizes:
             wins = 0
             for _ in range(n_trials):
-                # Sample true parameters uniformly from grid
                 theta_X: float = np.random.choice(grid)
                 theta_Y0: float = np.random.choice(grid)
                 theta_Y1: float = np.random.choice(grid)
@@ -139,7 +135,6 @@ def run_experiment(
 
                 X, Y = generate_data(n_samples, theta_X, theta_Y_given_X)
 
-                # Fit both directions
                 ll_XY: float
                 ll_YX: float
 
