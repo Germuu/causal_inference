@@ -156,7 +156,7 @@ def run_experiment(
     return results, sample_sizes, k_values
 
 
-def plot_results(results, sample_sizes, k_values):
+def plot_results(results, sample_sizes, k_values) -> None:
     plt.figure(figsize=(12, 7))
 
     for k in k_values:
