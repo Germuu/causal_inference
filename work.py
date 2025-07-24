@@ -137,16 +137,14 @@ def run_experiment(
                 theta_Y1: float = np.random.choice(grid)
                 theta_Y_given_X: dict[int, float] = {0: theta_Y0, 1: theta_Y1}
 
-                X: np.ndarray
-                Y: np.ndarray
                 X, Y = generate_data(n_samples, theta_X, theta_Y_given_X)
 
                 # Fit both directions
                 ll_XY: float
                 ll_YX: float
 
-                _, ll_XY = fit_direction_fast(X, Y, k, "X->Y")
-                _, ll_YX = fit_direction_fast(X, Y, k, "Y->X")
+                ll_XY = fit_direction_fast(X, Y, k, "X->Y")[1]
+                ll_YX = fit_direction_fast(X, Y, k, "Y->X")[1]
 
                 if ll_XY > ll_YX:
                     wins += 1
