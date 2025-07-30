@@ -116,7 +116,7 @@ def run_experiment(
     n_trials=100, sample_sizes=None, k_values=None
 ) -> tuple[dict[tuple[int, int], float], list[int], range]:
     if sample_sizes is None:
-        sample_sizes = [50, 100, 500, 1000, 5000, 10000]
+        sample_sizes = [50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000, 20000, 30000, 40000]
     if k_values is None:
         k_values = range(2, 10)
 
