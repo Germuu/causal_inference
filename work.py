@@ -56,10 +56,8 @@ def neighbors(val, grid: NDArray[np.float64]) -> list[float]:
 
 
 def fit_direction_fast(
-    X, Y, k, direction="X->Y"
+    X, Y, grid: NDArray[np.float64], direction="X->Y"
 ) -> tuple[tuple[float, float, float], float]:
-    grid: NDArray[np.float64] = discretize_params(k)
-
     if direction == "X->Y":
         X0 = X == 0
         X1 = X == 1
@@ -102,28 +100,31 @@ def fit_direction_fast(
             )
             if ll > best_ll:
                 best_ll = ll
-                best_params: tuple[float, float, float] = (theta_X, theta_Y0, theta_Y1)
+                best_params = (theta_X, theta_Y0, theta_Y1)
 
         if best_params is None:
             raise ValueError("No best parameters found. Check grid or input data.")
         return best_params, best_ll
 
     else:
-        return fit_direction_fast(Y, X, k, direction="X->Y")
+        return fit_direction_fast(Y, X, grid, direction="X->Y")
 
 
 def run_experiment(
-    n_trials=100, sample_sizes=None, k_values=None
+    n_trials=1000, sample_sizes=None, k_values=None
 ) -> tuple[dict[tuple[int, int], float], list[int], range]:
     if sample_sizes is None:
-        sample_sizes = [50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000, 20000, 30000, 40000]
+        sample_sizes = [50, 100, 250, 500, 1000, 2500, 5000, 10000, 20000, 40000]
     if k_values is None:
         k_values = range(2, 10)
 
     results: dict[tuple[int, int], float] = {}  # (k, n_samples) -> proportion X->Y wins
 
+    # ✅ Precompute grids for each k
+    grids: dict[int, NDArray[np.float64]] = {k: discretize_params(k) for k in k_values}
+
     for k in k_values:
-        grid: NDArray[np.float64] = discretize_params(k)
+        grid = grids[k]
         print(f"Running for k={k}")
         for n_samples in sample_sizes:
             wins = 0
@@ -135,11 +136,8 @@ def run_experiment(
 
                 X, Y = generate_data(n_samples, theta_X, theta_Y_given_X)
 
-                ll_XY: float
-                ll_YX: float
-
-                ll_XY = fit_direction_fast(X, Y, k, "X->Y")[1]
-                ll_YX = fit_direction_fast(X, Y, k, "Y->X")[1]
+                ll_XY: float = fit_direction_fast(X, Y, grid, "X->Y")[1]
+                ll_YX: float = fit_direction_fast(X, Y, grid, "Y->X")[1]
 
                 if ll_XY > ll_YX:
                     wins += 1
