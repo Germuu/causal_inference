@@ -2,8 +2,6 @@ import numpy as np
 from itertools import product
 import matplotlib.pyplot as plt
 from numpy.typing import NDArray
-
-
 from typing import Dict, Tuple
 
 def generate_counts_fast(
@@ -72,23 +70,23 @@ def fit_direction_from_counts(
     if direction == "X->Y":
         n_X1, n_X0, n_Y1_X0, n_Y0_X0, n_Y1_X1, n_Y0_X1 = counts
     else:  # Y->X: just swap labels
-        n_Y1 = counts[4] + counts[2]
-        n_Y0 = counts[5] + counts[3]
-        n_X1_Y0 = counts[5]
-        n_X0_Y0 = counts[3]
-        n_X1_Y1 = counts[4]
-        n_X0_Y1 = counts[2]
+        n_Y1: int = counts[4] + counts[2]
+        n_Y0: int = counts[5] + counts[3]
+        n_X1_Y0: int = counts[5]
+        n_X0_Y0: int = counts[3]
+        n_X1_Y1: int = counts[4]
+        n_X0_Y1: int = counts[2]
         counts = (n_Y1, n_Y0, n_X1_Y0, n_X0_Y0, n_X1_Y1, n_X0_Y1)
 
         n_X1, n_X0, n_Y1_X0, n_Y0_X0, n_Y1_X1, n_Y0_X1 = counts
 
-    mle_theta_X = n_X1 / (n_X1 + n_X0) if (n_X1 + n_X0) > 0 else 0.0
-    mle_theta_Y0 = n_Y1_X0 / (n_Y1_X0 + n_Y0_X0) if (n_Y1_X0 + n_Y0_X0) > 0 else 0.0
-    mle_theta_Y1 = n_Y1_X1 / (n_Y1_X1 + n_Y0_X1) if (n_Y1_X1 + n_Y0_X1) > 0 else 0.0
+    mle_theta_X: float = n_X1 / (n_X1 + n_X0) if (n_X1 + n_X0) > 0 else 0.0
+    mle_theta_Y0: float = n_Y1_X0 / (n_Y1_X0 + n_Y0_X0) if (n_Y1_X0 + n_Y0_X0) > 0 else 0.0
+    mle_theta_Y1: float = n_Y1_X1 / (n_Y1_X1 + n_Y0_X1) if (n_Y1_X1 + n_Y0_X1) > 0 else 0.0
 
-    theta_X_candidates = neighbors(mle_theta_X, grid)
-    theta_Y0_candidates = neighbors(mle_theta_Y0, grid)
-    theta_Y1_candidates = neighbors(mle_theta_Y1, grid)
+    theta_X_candidates: list[float] = neighbors(mle_theta_X, grid)
+    theta_Y0_candidates: list[float] = neighbors(mle_theta_Y0, grid)
+    theta_Y1_candidates: list[float] = neighbors(mle_theta_Y1, grid)
 
     best_ll = -np.inf
     best_params = (0.0, 0.0, 0.0)
@@ -100,14 +98,14 @@ def fit_direction_from_counts(
             counts, theta_X=theta_X, theta_Y0=theta_Y0, theta_Y1=theta_Y1
         )
         if ll > best_ll:
-            best_ll = ll
-            best_params = (theta_X, theta_Y0, theta_Y1)
+            best_ll: float = ll
+            best_params: tuple[float, float, float] = (theta_X, theta_Y0, theta_Y1)
 
     return best_params, best_ll
 
 
 def run_experiment(
-    n_trials=1000, sample_sizes=None, k_values=None
+    n_trials=10000, sample_sizes=None, k_values=None
 ) -> tuple[dict[tuple[int, int], float], list[int], range]:
     if sample_sizes is None:
         sample_sizes = [50, 100, 250, 500, 1000, 2500, 5000, 10000, 20000, 40000]
