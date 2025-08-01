@@ -4,27 +4,32 @@ import matplotlib.pyplot as plt
 from numpy.typing import NDArray
 
 
+from typing import Dict, Tuple
+
 def generate_counts_fast(
-    n_samples: int, theta_X: float, theta_Y_given_X: dict
-) -> tuple[int, int, int, int, int, int]:
-    theta_Y0 = theta_Y_given_X[0]
-    theta_Y1 = theta_Y_given_X[1]
+    n_samples: int,
+    theta_X: float,
+    theta_Y_given_X: Dict[int, float],
+) -> Tuple[int, int, int, int, int, int]:
+    theta_Y0: float = theta_Y_given_X[0]
+    theta_Y1: float = theta_Y_given_X[1]
 
-    p_00 = (1 - theta_X) * (1 - theta_Y0)
-    p_01 = (1 - theta_X) * theta_Y0
-    p_10 = theta_X * (1 - theta_Y1)
-    p_11 = theta_X * theta_Y1
+    p_00: float = (1 - theta_X) * (1 - theta_Y0)
+    p_01: float = (1 - theta_X) * theta_Y0
+    p_10: float = theta_X * (1 - theta_Y1)
+    p_11: float = theta_X * theta_Y1
 
-    counts = np.random.multinomial(n_samples, [p_11, p_10, p_01, p_00])
+    counts: np.ndarray = np.random.multinomial(n_samples, [p_11, p_10, p_01, p_00])
 
-    n_Y1_X1 = counts[0]
-    n_Y0_X1 = counts[1]
-    n_Y1_X0 = counts[2]
-    n_Y0_X0 = counts[3]
-    n_X1 = n_Y1_X1 + n_Y0_X1
-    n_X0 = n_Y1_X0 + n_Y0_X0
+    n_Y1_X1: int = counts[0]
+    n_Y0_X1: int = counts[1]
+    n_Y1_X0: int = counts[2]
+    n_Y0_X0: int = counts[3]
+    n_X1: int = n_Y1_X1 + n_Y0_X1
+    n_X0: int = n_Y1_X0 + n_Y0_X0
 
     return n_X1, n_X0, n_Y1_X0, n_Y0_X0, n_Y1_X1, n_Y0_X1
+
 
 
 def discretize_params(k: int) -> NDArray[np.float64]:
