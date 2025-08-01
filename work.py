@@ -111,7 +111,7 @@ def fit_direction_fast(
 
 
 def run_experiment(
-    n_trials=1000, sample_sizes=None, k_values=None
+    n_trials=100, sample_sizes=None, k_values=None
 ) -> tuple[dict[tuple[int, int], float], list[int], range]:
     if sample_sizes is None:
         sample_sizes = [50, 100, 250, 500, 1000, 2500, 5000, 10000, 20000, 40000]
