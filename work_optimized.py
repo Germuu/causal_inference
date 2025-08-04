@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from numpy.typing import NDArray
 from typing import Dict, Tuple
 
+
 def generate_counts_fast(
     n_samples: int,
     theta_X: float,
@@ -27,7 +28,6 @@ def generate_counts_fast(
     n_X0: int = n_Y1_X0 + n_Y0_X0
 
     return n_X1, n_X0, n_Y1_X0, n_Y0_X0, n_Y1_X1, n_Y0_X1
-
 
 
 def discretize_params(k: int) -> NDArray[np.float64]:
@@ -106,13 +106,13 @@ def fit_direction_from_counts(
 
 def run_experiment(
     n_trials=10000, sample_sizes=None, k_values=None
-) -> tuple[dict[tuple[int, int], float], list[int], range]:
+) -> tuple[dict[tuple[int, int], dict[str, float]], list[int], range]:
     if sample_sizes is None:
         sample_sizes = [50, 100, 250, 500, 1000, 2500, 5000, 10000, 20000, 40000]
     if k_values is None:
         k_values = range(2, 10)
 
-    results: dict[tuple[int, int], float] = {}
+    results: dict[tuple[int, int], dict[str, float]] = {}
 
     grids: dict[int, NDArray[np.float64]] = {k: discretize_params(k) for k in k_values}
 
@@ -121,6 +121,7 @@ def run_experiment(
         print(f"Running for k={k}")
         for n_samples in sample_sizes:
             wins = 0
+            ties = 0
             for _ in range(n_trials):
                 theta_X = np.random.choice(grid)
                 theta_Y0 = np.random.choice(grid)
@@ -134,29 +135,49 @@ def run_experiment(
 
                 if ll_XY > ll_YX:
                     wins += 1
+                elif ll_XY == ll_YX:
+                    wins += 0.5
+                    ties += 1
 
-            proportion = wins / n_trials
-            results[(k, n_samples)] = proportion
-            print(f"  n={n_samples}: Prop correct (X->Y) = {proportion:.3f}")
+            prop_correct = wins / n_trials
+            prop_ties = ties / n_trials
+            results[(k, n_samples)] = {"accuracy": prop_correct, "ties": prop_ties}
+            print(f"  n={n_samples}: Acc={prop_correct:.3f}, Ties={prop_ties:.3f}")
 
     return results, sample_sizes, k_values
 
 
+
 def plot_results(results, sample_sizes, k_values) -> None:
-    plt.figure(figsize=(12, 7))
+    plt.figure(figsize=(12, 6))
 
+    # Accuracy plot
+    plt.subplot(1, 2, 1)
     for k in k_values:
-        proportions = [results[(k, n)] for n in sample_sizes]
-        plt.plot(sample_sizes, proportions, marker="o", label=f"k={k}")
-
+        accuracies = [results[(k, n)]["accuracy"] for n in sample_sizes]
+        plt.plot(sample_sizes, accuracies, marker="o", label=f"k={k}")
     plt.xscale("log")
     plt.xlabel("Sample size (log scale)")
     plt.ylabel("Proportion correct (X→Y wins)")
-    plt.title("Causal direction identification accuracy vs Sample size")
-    plt.legend(title="Discretization granularity k")
+    plt.title("Causal direction accuracy")
     plt.grid(True)
+    plt.legend()
+
+    # Tie rate plot
+    plt.subplot(1, 2, 2)
+    for k in k_values:
+        tie_rates = [results[(k, n)]["ties"] for n in sample_sizes]
+        plt.plot(sample_sizes, tie_rates, marker="s", linestyle="--", label=f"k={k}")
+    plt.xscale("log")
+    plt.xlabel("Sample size (log scale)")
+    plt.ylabel("Proportion of ties")
+    plt.title("Proportion of likelihood ties")
+    plt.grid(True)
+    plt.legend()
+
     plt.tight_layout()
     plt.show()
+
 
 
 if __name__ == "__main__":
