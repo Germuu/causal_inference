@@ -118,14 +118,17 @@ def run_experiment(
 
     for k in k_values:
         grid = grids[k]
+        # Filter out 0 and 1 for data generation
+        valid_grid = grid[(grid > 0.0) & (grid < 1.0)]
+
         print(f"Running for k={k}")
         for n_samples in sample_sizes:
             wins = 0
             ties = 0
             for _ in range(n_trials):
-                theta_X = np.random.choice(grid)
-                theta_Y0 = np.random.choice(grid)
-                theta_Y1 = np.random.choice(grid)
+                theta_X = np.random.choice(valid_grid)
+                theta_Y0 = np.random.choice(valid_grid)
+                theta_Y1 = np.random.choice(valid_grid)
                 theta_Y_given_X = {0: theta_Y0, 1: theta_Y1}
 
                 counts = generate_counts_fast(n_samples, theta_X, theta_Y_given_X)
@@ -147,37 +150,34 @@ def run_experiment(
     return results, sample_sizes, k_values
 
 
-
 def plot_results(results, sample_sizes, k_values) -> None:
-    plt.figure(figsize=(12, 6))
-
     # Accuracy plot
-    plt.subplot(1, 2, 1)
+    plt.figure(figsize=(12, 7))
     for k in k_values:
         accuracies = [results[(k, n)]["accuracy"] for n in sample_sizes]
         plt.plot(sample_sizes, accuracies, marker="o", label=f"k={k}")
     plt.xscale("log")
     plt.xlabel("Sample size (log scale)")
     plt.ylabel("Proportion correct (X→Y wins)")
-    plt.title("Causal direction accuracy")
+    plt.title("Causal direction identification accuracy vs Sample size")
+    plt.legend(title="Discretization granularity k")
     plt.grid(True)
-    plt.legend()
+    plt.tight_layout()
+    plt.show()
 
-    # Tie rate plot
-    plt.subplot(1, 2, 2)
+    # Tie proportion plot
+    plt.figure(figsize=(12, 7))
     for k in k_values:
         tie_rates = [results[(k, n)]["ties"] for n in sample_sizes]
         plt.plot(sample_sizes, tie_rates, marker="s", linestyle="--", label=f"k={k}")
     plt.xscale("log")
     plt.xlabel("Sample size (log scale)")
     plt.ylabel("Proportion of ties")
-    plt.title("Proportion of likelihood ties")
+    plt.title("Proportion of likelihood ties vs Sample size")
+    plt.legend(title="Discretization granularity k")
     plt.grid(True)
-    plt.legend()
-
     plt.tight_layout()
     plt.show()
-
 
 
 if __name__ == "__main__":
