@@ -41,13 +41,18 @@ def log_likelihood_fast(
     theta_Y0: float,
     theta_Y1: float,
 ) -> float:
-    eps = 1e-12
+    eps = 1e-30
 
-    n_X1, n_X0, n_Y1_X0, n_Y0_X0, n_Y1_X1, n_Y0_X1 = counts
+    n_X1: int = counts[0]
+    n_X0: int = counts[1]
+    n_Y1_X0: int = counts[2]
+    n_Y0_X0: int = counts[3]
+    n_Y1_X1: int = counts[4]
+    n_Y0_X1: int = counts[5]
 
-    ll_X = n_X1 * np.log(theta_X + eps) + n_X0 * np.log(1 - theta_X + eps)
-    ll_Y0 = n_Y1_X0 * np.log(theta_Y0 + eps) + n_Y0_X0 * np.log(1 - theta_Y0 + eps)
-    ll_Y1 = n_Y1_X1 * np.log(theta_Y1 + eps) + n_Y0_X1 * np.log(1 - theta_Y1 + eps)
+    ll_X: float = n_X1 * np.log(theta_X + eps) + n_X0 * np.log(1 - theta_X + eps)
+    ll_Y0: float = n_Y1_X0 * np.log(theta_Y0 + eps) + n_Y0_X0 * np.log(1 - theta_Y0 + eps)
+    ll_Y1: float = n_Y1_X1 * np.log(theta_Y1 + eps) + n_Y0_X1 * np.log(1 - theta_Y1 + eps)
 
     return ll_X + ll_Y0 + ll_Y1
 
@@ -94,8 +99,8 @@ def fit_direction_from_counts(
     for theta_X, theta_Y0, theta_Y1 in product(
         theta_X_candidates, theta_Y0_candidates, theta_Y1_candidates
     ):
-        ll = log_likelihood_fast(
-            counts, theta_X=theta_X, theta_Y0=theta_Y0, theta_Y1=theta_Y1
+        ll: float = log_likelihood_fast(
+            counts=counts, theta_X=theta_X, theta_Y0=theta_Y0, theta_Y1=theta_Y1
         )
         if ll > best_ll:
             best_ll: float = ll
@@ -126,10 +131,10 @@ def run_experiment(
             wins = 0
             ties = 0
             for _ in range(n_trials):
-                theta_X = np.random.choice(valid_grid)
-                theta_Y0 = np.random.choice(valid_grid)
-                theta_Y1 = np.random.choice(valid_grid)
-                theta_Y_given_X = {0: theta_Y0, 1: theta_Y1}
+                theta_X: float = np.random.choice(valid_grid)
+                theta_Y0: float = np.random.choice(valid_grid)
+                theta_Y1: float = np.random.choice(valid_grid)
+                theta_Y_given_X: dict[int, float] = {0: theta_Y0, 1: theta_Y1}
 
                 counts = generate_counts_fast(n_samples, theta_X, theta_Y_given_X)
 
@@ -142,8 +147,8 @@ def run_experiment(
                     wins += 0.5
                     ties += 1
 
-            prop_correct = wins / n_trials
-            prop_ties = ties / n_trials
+            prop_correct: float = wins / n_trials
+            prop_ties: float = ties / n_trials
             results[(k, n_samples)] = {"accuracy": prop_correct, "ties": prop_ties}
             print(f"  n={n_samples}: Acc={prop_correct:.3f}, Ties={prop_ties:.3f}")
 
