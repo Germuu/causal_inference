@@ -110,7 +110,7 @@ def fit_direction_from_counts(
 
 
 def run_experiment(
-    n_trials=10000, sample_sizes=None, k_values=None
+    n_trials=1000, sample_sizes=None, k_values=None
 ) -> tuple[dict[tuple[int, int], dict[str, float]], list[int], range]:
     if sample_sizes is None:
         sample_sizes = [50, 100, 250, 500, 1000, 2500, 5000, 10000, 20000, 40000]
@@ -136,10 +136,10 @@ def run_experiment(
                 theta_Y1: float = np.random.choice(valid_grid)
                 theta_Y_given_X: dict[int, float] = {0: theta_Y0, 1: theta_Y1}
 
-                counts = generate_counts_fast(n_samples, theta_X, theta_Y_given_X)
+                counts: tuple[int, int, int, int, int, int] = generate_counts_fast(n_samples, theta_X, theta_Y_given_X)
 
-                ll_XY = fit_direction_from_counts(counts, grid, "X->Y")[1]
-                ll_YX = fit_direction_from_counts(counts, grid, "Y->X")[1]
+                ll_XY: float = fit_direction_from_counts(counts, grid, "X->Y")[1]
+                ll_YX: float = fit_direction_from_counts(counts, grid, "Y->X")[1]
 
                 if ll_XY > ll_YX:
                     wins += 1
