@@ -41,7 +41,7 @@ def log_likelihood_fast(
     theta_Y0: float,
     theta_Y1: float,
 ) -> float:
-    eps = 1e-30
+    eps = 1e-3
 
     n_X1: int = counts[0]
     n_X0: int = counts[1]
@@ -110,7 +110,7 @@ def fit_direction_from_counts(
 
 
 def run_experiment(
-    n_trials=1000, sample_sizes=None, k_values=None
+    n_trials=10000, sample_sizes=None, k_values=None
 ) -> tuple[dict[tuple[int, int], dict[str, float]], list[int], range]:
     if sample_sizes is None:
         sample_sizes = [50, 100, 250, 500, 1000, 2500, 5000, 10000, 20000, 40000]
