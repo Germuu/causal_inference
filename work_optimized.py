@@ -32,7 +32,9 @@ def generate_counts_fast(
 
 def discretize_params(k: int) -> NDArray[np.float64]:
     step: float = 2 ** (-k)
-    return np.arange(start=0, stop=1 + step, step=step, dtype=np.float64)
+    grid = np.arange(start=0, stop=1 + step, step=step, dtype=np.float64)
+    # Exclude boundary points 0 and 1
+    return grid[(grid > 0.0) & (grid < 1.0)]
 
 
 def log_likelihood_fast(
@@ -41,20 +43,19 @@ def log_likelihood_fast(
     theta_Y0: float,
     theta_Y1: float,
 ) -> float:
-    eps = 1e-3
-
-    n_X1: int = counts[0]
-    n_X0: int = counts[1]
-    n_Y1_X0: int = counts[2]
-    n_Y0_X0: int = counts[3]
-    n_Y1_X1: int = counts[4]
-    n_Y0_X1: int = counts[5]
-
-    ll_X: float = n_X1 * np.log(theta_X + eps) + n_X0 * np.log(1 - theta_X + eps)
-    ll_Y0: float = n_Y1_X0 * np.log(theta_Y0 + eps) + n_Y0_X0 * np.log(1 - theta_Y0 + eps)
-    ll_Y1: float = n_Y1_X1 * np.log(theta_Y1 + eps) + n_Y0_X1 * np.log(1 - theta_Y1 + eps)
-
-    return ll_X + ll_Y0 + ll_Y1
+    params: list[float] = [
+        theta_X,        # n_X1
+        1 - theta_X,    # n_X0
+        theta_Y0,       # n_Y1_X0
+        1 - theta_Y0,   # n_Y0_X0
+        theta_Y1,       # n_Y1_X1
+        1 - theta_Y1,   # n_Y0_X1
+    ]
+    return sum(
+        c * np.log(p)
+        for c, p in zip(counts, params)
+        if c > 0 and p > 0
+    )
 
 
 def neighbors(val, grid: NDArray[np.float64]) -> list[float]:
@@ -104,7 +105,7 @@ def fit_direction_from_counts(
         )
         if ll > best_ll:
             best_ll: float = ll
-            best_params: tuple[float, float, float] = (theta_X, theta_Y0, theta_Y1)
+            best_params: Tuple[float, float, float] = (theta_X, theta_Y0, theta_Y1)
 
     return best_params, best_ll
 
@@ -123,18 +124,16 @@ def run_experiment(
 
     for k in k_values:
         grid = grids[k]
-        # Filter out 0 and 1 for data generation
-        valid_grid = grid[(grid > 0.0) & (grid < 1.0)]
 
         print(f"Running for k={k}")
         for n_samples in sample_sizes:
             wins = 0
             ties = 0
             for _ in range(n_trials):
-                theta_X: float = np.random.choice(valid_grid)
-                theta_Y0: float = np.random.choice(valid_grid)
-                theta_Y1: float = np.random.choice(valid_grid)
-                theta_Y_given_X: dict[int, float] = {0: theta_Y0, 1: theta_Y1}
+                theta_X: float = np.random.choice(grid)
+                theta_Y0: float = np.random.choice(grid)
+                theta_Y1: float = np.random.choice(grid)
+                theta_Y_given_X: Dict[int, float] = {0: theta_Y0, 1: theta_Y1}
 
                 counts: tuple[int, int, int, int, int, int] = generate_counts_fast(n_samples, theta_X, theta_Y_given_X)
 
