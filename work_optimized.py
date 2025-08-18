@@ -3,6 +3,7 @@ from itertools import product
 import matplotlib.pyplot as plt
 from numpy.typing import NDArray
 from typing import Dict, Tuple
+from math import fsum
 
 
 def generate_counts_fast(
@@ -51,7 +52,7 @@ def log_likelihood_fast(
         theta_Y1,       # n_Y1_X1
         1 - theta_Y1,   # n_Y0_X1
     ]
-    return sum(
+    return fsum(
         c * np.log(p)
         for c, p in zip(counts, params)
         if c > 0 and p > 0
