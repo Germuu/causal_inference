@@ -146,7 +146,7 @@ def run_experiment(
                 if ll_XY > ll_YX:
                     wins += 1
                 elif ll_XY == ll_YX:
-                    wins += 1
+                    wins += 0.5
                     ties += 1
 
             prop_correct: float = wins / n_trials
