@@ -159,47 +159,51 @@ def plot_results(results, sample_sizes, k_values) -> None:
     import seaborn as sns
     from matplotlib.lines import Line2D
 
-    sns.set_theme(style="whitegrid", palette="muted", font_scale=1.2)
-    
-    plt.figure(figsize=(14, 8))  # taller figure for more vertical space
+    sns.set_theme(style="whitegrid", palette="Set2", font_scale=1.2)
 
-    # Colors for different k values
-    colors = sns.color_palette("tab10", n_colors=len(k_values))
+    fig, ax1 = plt.subplots(figsize=(14, 8))  # primary axis for accuracy
 
-    # Plot accuracy (X->Y wins)
+    # Colors
+    colors = sns.color_palette("Set2", n_colors=len(k_values))
+
+    # Plot accuracy on primary y-axis
     for idx, k in enumerate(k_values):
         accuracies = [results[(k, n)]["accuracy"] for n in sample_sizes]
-        plt.plot(sample_sizes, accuracies, marker="o", linestyle="-",
+        ax1.plot(sample_sizes, accuracies, marker="o", linestyle="-",
                  color=colors[idx], label=f"k={k} (accuracy)")
 
-    # Plot tie rates
+    ax1.set_xscale("log")
+    ax1.set_xlabel("Sample size (log scale)")
+    ax1.set_ylabel("Accuracy (X→Y wins)")
+    ax1.set_ylim(0, 1.05)
+    ax1.set_yticks([0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    ax1.grid(True, which="both", linestyle="--", linewidth=0.5)
+
+    # Secondary y-axis for tie proportion
+    ax2 = ax1.twinx()
     for idx, k in enumerate(k_values):
         tie_rates = [results[(k, n)]["ties"] for n in sample_sizes]
-        plt.plot(sample_sizes, tie_rates, marker="s", linestyle="--",
+        ax2.plot(sample_sizes, tie_rates, marker="s", linestyle="--",
                  color=colors[idx], label=f"k={k} (ties)")
+    ax2.set_ylabel("Tie proportion")
+    ax2.set_ylim(0, 1.05)
 
-    plt.xscale("log")
-    plt.xlabel("Sample size (log scale)")
-    plt.ylabel("Proportion")
-    plt.title("Causal direction identification vs Sample size")
-    plt.ylim(0, 1.05)  # slight buffer above 1
-    plt.yticks([0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    plt.grid(True, which="both", linestyle="--", linewidth=0.5)
-
+    # Legends
     accuracy_lines = [Line2D([0], [0], color=colors[i], marker="o", linestyle="-") for i in range(len(k_values))]
     tie_lines = [Line2D([0], [0], color=colors[i], marker="s", linestyle="--") for i in range(len(k_values))]
 
-    # First legend (accuracy)
-    legend1 = plt.legend(handles=accuracy_lines, labels=[f"k={k}" for k in k_values],
+    legend1 = ax1.legend(handles=accuracy_lines, labels=[f"k={k}" for k in k_values],
                          title="Accuracy (X→Y wins)", loc="upper left", bbox_to_anchor=(1.02, 1))
-    plt.gca().add_artist(legend1)  # keep the first legend
+    ax1.add_artist(legend1)
 
-    # Second legend (ties)
-    plt.legend(handles=tie_lines, labels=[f"k={k}" for k in k_values],
+    ax2.legend(handles=tie_lines, labels=[f"k={k}" for k in k_values],
                title="Tie proportion", loc="lower left", bbox_to_anchor=(1.02, 0))
 
+    plt.title("Causal direction identification vs Sample size")
     plt.tight_layout()
     plt.show()
+
+
 
 
 # -----------------------------
@@ -207,5 +211,5 @@ def plot_results(results, sample_sizes, k_values) -> None:
 # -----------------------------
 if __name__=="__main__":
     np.random.seed(42)
-    results, sample_sizes, k_values = run_experiment(k_values= [5])  # adjust n_trials for speed
+    results, sample_sizes, k_values = run_experiment()  # adjust n_trials for speed
     plot_results(results, sample_sizes, k_values)
