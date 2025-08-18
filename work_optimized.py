@@ -15,30 +15,31 @@ def generate_counts_vectorized(
     theta_Y_given_X: Dict[int, float],
     n_trials: int
 ) -> NDArray[np.int64]:
-    theta_Y0, theta_Y1 = theta_Y_given_X[0], theta_Y_given_X[1]
-    p = np.array([
+    theta_Y0: float = theta_Y_given_X[0]
+    theta_Y1: float = theta_Y_given_X[1]
+    p: NDArray[np.float64] = np.array([
         theta_X * theta_Y1,       # Y1,X1
         theta_X * (1 - theta_Y1), # Y0,X1
         (1 - theta_X) * theta_Y0, # Y1,X0
         (1 - theta_X) * (1 - theta_Y0)  # Y0,X0
     ])
-    counts = np.random.multinomial(n_samples, p, size=n_trials)
+    counts: NDArray[np.int64] = np.random.multinomial(n_samples, p, size=n_trials)
     return counts  # shape (n_trials, 4)
 
 # -----------------------------
 # Discretize grid
 # -----------------------------
 def discretize_params(k: int) -> NDArray[np.float64]:
-    step = 2 ** (-k)
-    grid = np.arange(step, 1, step, dtype=np.float64)
+    step: float = 2 ** (-k)
+    grid: NDArray[np.float64] = np.arange(step, 1, step, dtype=np.float64)
     return grid
 
 # -----------------------------
 # Neighbors (precomputed)
 # -----------------------------
 def neighbors(val, grid: NDArray[np.float64]) -> list[float]:
-    idx = np.searchsorted(grid, val)
-    candidates = []
+    idx: int = np.searchsorted(grid, val)
+    candidates: list[float] = []
     if idx > 0:
         candidates.append(grid[idx - 1])
     if idx < len(grid):
@@ -48,14 +49,23 @@ def neighbors(val, grid: NDArray[np.float64]) -> list[float]:
 # -----------------------------
 # Log-likelihood (unrolled)
 # -----------------------------
-def log_likelihood_fast(counts: Tuple[int, int, int, int], theta_X, theta_Y0, theta_Y1) -> float:
-    n_Y1_X1, n_Y0_X1, n_Y1_X0, n_Y0_X0 = counts
-    ll = 0.0
-    if n_Y1_X1 > 0: ll += n_Y1_X1 * np.log(theta_Y1)
-    if n_Y0_X1 > 0: ll += n_Y0_X1 * np.log(1 - theta_Y1)
-    if n_Y1_X0 > 0: ll += n_Y1_X0 * np.log(theta_Y0)
-    if n_Y0_X0 > 0: ll += n_Y0_X0 * np.log(1 - theta_Y0)
-    n_X1, n_X0 = n_Y1_X1 + n_Y0_X1, n_Y1_X0 + n_Y0_X0
+def log_likelihood_fast(counts: Tuple[int, int, int, int], theta_X: float, theta_Y0: float, theta_Y1: float) -> float:
+    n_Y1_X1: int = counts[0]
+    n_Y0_X1: int = counts[1]
+    n_Y1_X0: int = counts[2]
+    n_Y0_X0: int = counts[3]
+    ll: float = 0.0
+    
+    if n_Y1_X1 > 0: 
+        ll += n_Y1_X1 * np.log(theta_Y1)
+    if n_Y0_X1 > 0: 
+        ll += n_Y0_X1 * np.log(1 - theta_Y1)
+    if n_Y1_X0 > 0: 
+        ll += n_Y1_X0 * np.log(theta_Y0)
+    if n_Y0_X0 > 0: 
+        ll += n_Y0_X0 * np.log(1 - theta_Y0)
+    n_X1: int = n_Y1_X1 + n_Y0_X1
+    n_X0: int = n_Y1_X0 + n_Y0_X0
     if n_X1 > 0: ll += n_X1 * np.log(theta_X)
     if n_X0 > 0: ll += n_X0 * np.log(1 - theta_X)
     return ll
@@ -70,35 +80,36 @@ def fit_direction_from_counts(
 ) -> Tuple[Tuple[float,float,float], float]:
 
     if direction == "Y->X":
-        n_Y1, n_Y0 = counts[0] + counts[2], counts[1] + counts[3]
-        n_X1_Y0, n_X0_Y0 = counts[1], counts[3]
-        n_X1_Y1, n_X0_Y1 = counts[0], counts[2]
+        n_X1_Y0 = counts[1]
+        n_X0_Y0 = counts[3]
+        n_X1_Y1 = counts[0]
+        n_X0_Y1 = counts[2]
         counts = (n_X1_Y1, n_X0_Y1, n_X1_Y0, n_X0_Y0)
     n_Y1_X1, n_Y0_X1, n_Y1_X0, n_Y0_X0 = counts
 
     # MLE
     n_X1, n_X0 = n_Y1_X1 + n_Y0_X1, n_Y1_X0 + n_Y0_X0
-    mle_theta_X = n_X1 / (n_X1 + n_X0) if n_X1 + n_X0 > 0 else 0.0
-    mle_theta_Y0 = n_Y1_X0 / (n_Y1_X0 + n_Y0_X0) if n_Y1_X0 + n_Y0_X0 > 0 else 0.0
-    mle_theta_Y1 = n_Y1_X1 / (n_Y1_X1 + n_Y0_X1) if n_Y1_X1 + n_Y0_X1 > 0 else 0.0
+    mle_theta_X: float = n_X1 / (n_X1 + n_X0) if n_X1 + n_X0 > 0 else 0.0
+    mle_theta_Y0: float = n_Y1_X0 / (n_Y1_X0 + n_Y0_X0) if n_Y1_X0 + n_Y0_X0 > 0 else 0.0
+    mle_theta_Y1: float = n_Y1_X1 / (n_Y1_X1 + n_Y0_X1) if n_Y1_X1 + n_Y0_X1 > 0 else 0.0
 
-    theta_X_candidates = neighbors(mle_theta_X, grid)
-    theta_Y0_candidates = neighbors(mle_theta_Y0, grid)
-    theta_Y1_candidates = neighbors(mle_theta_Y1, grid)
+    theta_X_candidates: list[float] = neighbors(mle_theta_X, grid)
+    theta_Y0_candidates: list[float] = neighbors(mle_theta_Y0, grid)
+    theta_Y1_candidates: list[float] = neighbors(mle_theta_Y1, grid)
 
-    best_ll = -np.inf
-    best_params = (0.0,0.0,0.0)
+    best_ll: float = -np.inf
+    best_params: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     for theta_X, theta_Y0, theta_Y1 in product(theta_X_candidates, theta_Y0_candidates, theta_Y1_candidates):
-        ll = log_likelihood_fast(counts, theta_X, theta_Y0, theta_Y1)
+        ll: float = log_likelihood_fast(counts, theta_X, theta_Y0, theta_Y1)
         if ll > best_ll:
             best_ll = ll
-            best_params = (theta_X, theta_Y0, theta_Y1)
+            best_params: Tuple[float, float, float] = (theta_X, theta_Y0, theta_Y1)
     return best_params, best_ll
 
 # -----------------------------
 # Single trial
 # -----------------------------
-def single_trial(n_samples, grid, k):
+def single_trial(n_samples, grid, k) -> Tuple[float, int]:
     theta_X = np.random.choice(grid)
     theta_Y0 = np.random.choice(grid)
     theta_Y1 = np.random.choice(grid)
@@ -115,17 +126,17 @@ def single_trial(n_samples, grid, k):
 # -----------------------------
 # Run experiment
 # -----------------------------
-def run_experiment(n_trials=100000, sample_sizes=None, k_values=None):
+def run_experiment(n_trials=100000, sample_sizes=None, k_values=None) -> Tuple[dict, list, range]:
     if sample_sizes is None:
         sample_sizes = [50,100,250,500,1000,2500,5000,10000,20000,40000]
     if k_values is None:
         k_values = range(2,10)
 
-    results = {}
-    grids = {k: discretize_params(k) for k in k_values}
+    results: dict = {}
+    grids: dict = {k: discretize_params(k) for k in k_values}
 
     for k in k_values:
-        grid = grids[k]
+        grid: NDArray[np.float64] = grids[k]
         print(f"Running for k={k}")
         for n_samples in sample_sizes:
             trial_results = Parallel(n_jobs=-1)(
@@ -141,7 +152,7 @@ def run_experiment(n_trials=100000, sample_sizes=None, k_values=None):
 # -----------------------------
 # Plot results
 # -----------------------------
-def plot_results(results, sample_sizes, k_values):
+def plot_results(results, sample_sizes, k_values) -> None:
     plt.figure(figsize=(12,7))
     for k in k_values:
         accuracies = [results[(k,n)]["accuracy"] for n in sample_sizes]
