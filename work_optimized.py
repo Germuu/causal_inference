@@ -60,13 +60,15 @@ def log_likelihood_fast(
 
 
 def neighbors(val, grid: NDArray[np.float64]) -> list[float]:
-    idx: int = np.searchsorted(grid, val)
-    candidates: list[float] = []
+    idx = np.searchsorted(grid, val)
+    candidates = []
     if idx > 0:
         candidates.append(grid[idx - 1])
     if idx < len(grid):
         candidates.append(grid[min(idx, len(grid) - 1)])
-    return list(set(candidates))
+    # Ensure uniqueness
+    return sorted(set(candidates))
+
 
 
 def fit_direction_from_counts(
@@ -144,7 +146,7 @@ def run_experiment(
                 if ll_XY > ll_YX:
                     wins += 1
                 elif ll_XY == ll_YX:
-                    wins += 0.5
+                    wins += 1
                     ties += 1
 
             prop_correct: float = wins / n_trials
